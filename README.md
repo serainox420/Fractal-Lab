@@ -21,7 +21,6 @@
 **Arch Linux:**
 ```bash
 sudo pacman -S glfw-x11 glew mesa base-devel git
-
 ```
 
 ## Build Instructions
@@ -29,18 +28,34 @@ sudo pacman -S glfw-x11 glew mesa base-devel git
 Clone this repository and the required Dear ImGui submodule (Docking branch):
 
 ```bash
-git clone https://github.com/serainox420/fractal-lab.git
-cd fractal-lab
+git clone https://github.com/serainox420/Fractal-Lab.git && cd Fractal-Lab
+```
+
+Get dependencies (imgui) & build
+```bash
 git clone -b docking https://github.com/ocornut/imgui.git
 make
+```
 
+Manual build
+```bash
+g++ main.cpp \
+imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp \
+imgui/backends/imgui_impl_glfw.cpp imgui/backends/imgui_impl_opengl3.cpp \
+-I./imgui -I./imgui/backends \
+-lGL -lglfw -lGLEW -lm \
+-o fractal_lab
 ```
 
 ## Run
 
 ```bash
 make run
+```
 
+Or run manually (Wayland compositor)
+```bash
+env -u WAYLAND_DISPLAY ./fractal_lab
 ```
 
 ### Wayland Configuration Note
