@@ -1,6 +1,9 @@
-# Fractal Lab
+> # Fractal Lab
+> ### Real-time 3D non-Euclidean geometry ray-marcher written in C++ (OpenGL 3.3 Core) with ImGui. 
 
-Real-time 3D non-Euclidean geometry ray-marcher written in C++ (OpenGL 3.3 Core) with ImGui. Features live GLSL recompilation and automated parameter modulation for creative coding.
+<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/60de4d31-c2a0-4b00-94e2-adc0f092c461" />
+
+> ### Features live GLSL recompilation and automated parameter modulation for creative coding.
 
 ## Technical Specs
 
