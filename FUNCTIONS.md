@@ -371,3 +371,596 @@ float map(vec3 p) {
 }
 
 ```
+
+---
+
+**5. SACRED GEOMETRY (IFS OCTAHEDRON)**
+
+**Method:** Iterated Function System utilizing absolute space folding and sequential planar rotations. Scales geometry exponentially within a loop to output a rigid, self-similar crystalline lattice.
+
+**Parameters:**
+
+* **Shape Speed:** Temporal multiplier (`t`) applied to internal rotational matrices during iteration.
+* **Amp (Amplitude):** Translation offset vector subtracted post-fold. Controls the physical separation of fractal segments.
+* **Freq (Frequency):** Fixed angular offset applied to the XY/XZ coordinate planes during each fractal step.
+* **Warp Strength:** Base radius of the initial primitive sphere prior to fractal scaling.
+
+```glsl
+// SACRED GEOMETRY (IFS OCTAHEDRON)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    float scale = 1.0;
+    
+    for(int i = 0; i < 6; i++) {
+        // Absolute spatial fold
+        q = abs(q) - vec3(u_amp);
+        
+        // Iterative angular displacement
+        q.xy *= rot(u_freq + t);
+        q.xz *= rot(u_freq * 0.5 - t * 0.5);
+        
+        // Fractal scaling
+        q *= 2.0;
+        scale *= 2.0;
+    }
+    
+    // Evaluate base primitive and divide by accumulated scale
+    float d = sdSphere(q, max(u_warp, 0.1)) / scale;
+    return d * 0.4;
+}
+
+```
+
+---
+
+**6. QUANTUM FOAM (INTERFERENCE FIELD)**
+
+**Method:** Additive trigonometric synthesis. Applies overlapping, out-of-phase sine and cosine waves to the coordinate space to subtract volume from a base spherical primitive.
+
+**Parameters:**
+
+* **Shape Speed:** Phase shift velocity for the trigonometric noise functions.
+* **Amp (Amplitude):** Subtraction depth scalar. Determines the severity of the voids carved into the sphere.
+* **Freq (Frequency):** Coordinate multiplier. Increases the spatial density of the noise grid.
+* **Warp Strength:** Applies a non-linear Z-axis twist to the coordinates prior to noise evaluation.
+
+```glsl
+// QUANTUM FOAM (INTERFERENCE FIELD)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Base geometry boundary
+    float base_sphere = sdSphere(p, 2.5);
+    
+    // Non-linear coordinate distortion
+    vec3 warped_p = p;
+    warped_p.xy *= rot(warped_p.z * u_warp);
+    
+    // High-frequency coordinate mapping
+    vec3 q = warped_p * u_freq;
+    
+    // 3D Trigonometric Interference
+    float noise1 = sin(q.x) * sin(q.y) * cos(q.z);
+    float noise2 = cos(q.x * 2.3 + t) * sin(q.y * 2.4 - t) * cos(q.z * 2.1);
+    float total_noise = (noise1 + noise2 * 0.5);
+    
+    // Subtraction logic
+    float d = base_sphere - (total_noise * u_amp);
+    
+    // Strict safety multiplier for steep high-frequency gradients
+    return d * 0.3;
+}
+
+```
+
+---
+
+**7. CYBERNETIC HIVE (MODULO PILLARS)**
+
+**Method:** Domain repetition via modulo operator on the XZ plane. Applies localized height variations using trigonometric functions mapped to static grid IDs. Bounded by a global sphere intersection to limit rendering to a finite cluster.
+
+**Parameters:**
+
+* **Shape Speed:** Velocity of the vertical (Y-axis) height oscillation.
+* **Amp (Amplitude):** Scalar distance defining the boundary limits of the repeating cells.
+* **Freq (Frequency):** ID coordinate multiplier influencing the phase variance of adjacent pillars.
+* **Warp Strength:** Maximum vertical scalar displacement (height) of the individual bounding boxes.
+
+```glsl
+// CYBERNETIC HIVE (MODULO PILLARS)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Calculate cell ID based on spatial position
+    float spacing = max(u_amp, 0.1);
+    vec2 id = floor(p.xz / spacing);
+    
+    // Modulo grid generation
+    vec3 q = p;
+    q.xz = mod(p.xz, spacing) - spacing * 0.5;
+    
+    // ID-driven parametric height
+    float height_variance = sin(id.x * u_freq + t) * cos(id.y * u_freq - t);
+    float current_height = 1.0 + height_variance * u_warp;
+    
+    // Pillar geometry
+    float pillar = sdBox(q, vec3(spacing * 0.35, current_height, spacing * 0.35));
+    
+    // Global bounding volume
+    float boundary = sdSphere(p, 4.0);
+    
+    // Intersection to limit infinite grid
+    return max(pillar, boundary) * 0.5;
+}
+
+```
+
+---
+
+**8. XENOMORPH SPINE (RECURSIVE TWIST)**
+
+**Method:** 1D domain repetition along the Z-axis. Applies a continuous Z-dependent rotation to the XY plane. Blends primary and secondary primitives via polynomial smooth minimum (`smin`).
+
+**Parameters:**
+
+* **Shape Speed:** Linear translation velocity mapping the coordinate space along the Z-axis.
+* **Amp (Amplitude):** Z-axis domain repetition interval (spatial gap between structural nodes).
+* **Freq (Frequency):** Radius thickness of the secondary intersecting geometry (the outer rings).
+* **Warp Strength:** Rotational magnitude multiplier applied per unit of Z-depth.
+
+```glsl
+// XENOMORPH SPINE (RECURSIVE TWIST)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Forward translation
+    p.z -= t * 3.0;
+    
+    // Continuous axial torsion
+    p.xy *= rot(p.z * u_warp);
+    
+    vec3 q = p;
+    float interval = max(u_amp, 0.5);
+    
+    // 1D Modulo repetition
+    q.z = mod(p.z, interval) - interval * 0.5;
+    
+    // Primary structural node
+    float vertebra = sdBox(q, vec3(0.8, 0.4, interval * 0.25));
+    
+    // Secondary intersecting geometry
+    // Rotated to intersect the primary node perpendicularly
+    vec3 ring_q = q;
+    ring_q.xz *= rot(1.5707); 
+    float outer_ring = sdTorus(ring_q, vec2(1.2, u_freq * 0.2));
+    
+    // Organic polynomial blend
+    float spine = smin(vertebra, outer_ring, 0.4);
+    
+    return spine * 0.4;
+}
+
+```
+
+---
+
+Here is an arsenal of 10 completely unique, weird, and highly specialized distance estimator functions for your God-Mode engine. I’ve pushed the math into abstract territories—expect things like domain-warped fractals, volumetric boolean slices, non-linear coordinate stacking, and trigonometric noise structures.
+
+These are designed to look alien, mathematical, and computationally aggressive.
+
+---
+
+### 1. The Tesseract Ghost (Hypercube Projection)
+
+**What is it?** An approximation of a 4D hypercube (Tesseract) projected down into 3D space. It uses absolute value folding combined with orthogonal rotation to create a structure that seems to fold in and out of itself.
+**Sliders:**
+
+* **Shape Speed:** Rotates the 4D projection axis.
+* **Amp:** Controls the internal scaling threshold (makes the "walls" thicker or thinner).
+* **Freq:** Modifies the orthogonal folding angles.
+* **Warp Strength:** Pushes the internal faces outward, creating a "hyper-cross" effect.
+
+```glsl
+// 1. THE TESSERACT GHOST (HYPERCUBE PROJECTION)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    float d = 1000.0;
+    
+    // Orthogonal folding loop
+    for(int i = 0; i < 4; i++) {
+        q = abs(q) - vec3(u_amp * 0.5);
+        
+        // 4D rotation approximation (swapping axes and rotating)
+        q.xy *= rot(1.5707 * sin(t * 0.2)); 
+        q.xz *= rot(u_freq);
+        q.yz *= rot(1.5707 * cos(t * 0.2));
+        
+        // Accumulate distance to a base cube
+        d = min(d, sdBox(q, vec3(0.5 + u_warp)));
+    }
+    
+    // Intersect with a sphere to keep it contained
+    return max(d, length(p) - 3.5) * 0.5;
+}
+
+```
+
+---
+
+### 2. Neuro-Spine (Sinusoidal Stacking)
+
+**What is it?** A biological-looking column that looks like an alien spinal cord or a stack of neural discs. It uses sine functions not just for displacement, but to define the actual radius of stacked cylinders.
+**Sliders:**
+
+* **Shape Speed:** Makes the spine "breathe" up and down.
+* **Amp:** Controls the depth of the gaps between the discs.
+* **Freq:** Determines how many discs are stacked along the Z-axis.
+* **Warp Strength:** Twists the spine laterally, breaking its symmetry.
+
+```glsl
+// 2. NEURO-SPINE (SINUSOIDAL STACKING)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Twist the spine laterally based on Z height
+    p.xy *= rot(sin(p.z * 0.5 + t) * u_warp);
+    
+    // Base cylinder
+    float base_cyl = length(p.xy) - 1.0;
+    
+    // Calculate the dynamic radius using high-frequency sine waves
+    float disc_radius = sin(p.z * u_freq + t) * u_amp;
+    
+    // Subtract the gaps to create stacked discs
+    float spine = base_cyl - disc_radius;
+    
+    // Cap the ends of the spine so it doesn't go to infinity
+    float end_caps = abs(p.z) - 4.0;
+    
+    return max(spine, end_caps) * 0.5;
+}
+
+```
+
+---
+
+### 3. Void Lattice (Negative Space Geometry)
+
+**What is it?** A solid block of space that has been violently chewed out by intersecting spheres and tubes. It creates a highly porous, cheese-like structure that feels immense and claustrophobic.
+**Sliders:**
+
+* **Shape Speed:** Moves the chewing voids through the solid block.
+* **Amp:** Controls the overall size of the bounding box.
+* **Freq:** Increases the number of intersecting voids (density of holes).
+* **Warp Strength:** Modifies the radius of the intersecting tubes.
+
+```glsl
+// 3. VOID LATTICE (NEGATIVE SPACE GEOMETRY)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Start with a massive solid box
+    float solid_box = sdBox(p, vec3(3.0 + u_amp));
+    
+    // Create a 3D grid of repeating coordinates for the voids
+    vec3 q = p * u_freq;
+    
+    // Animate the voids moving through the box
+    q += vec3(sin(t), cos(t * 0.8), sin(t * 1.2)) * 2.0;
+    
+    // Generate intersecting tubes (voids)
+    float voids = min(length(sin(q.xy)), min(length(sin(q.yz)), length(sin(q.xz))));
+    
+    // Subtract the voids from the solid box
+    // voids - threshold defines how thick the remaining walls are
+    float final_lattice = max(solid_box, -(voids - u_warp));
+    
+    return final_lattice * 0.4;
+}
+
+```
+
+---
+
+### 4. The Origami Star (Hexagonal Folding)
+
+**What is it?** A star-like structure that looks like a 3D folded paper star. It uses hexagonal symmetry logic and sharp planar intersections to create rigid, pointed geometry.
+**Sliders:**
+
+* **Shape Speed:** Breathes the star in and out (scaling).
+* **Amp:** Controls the length of the star's points.
+* **Freq:** Twists the points orthogonally (like a shuriken).
+* **Warp Strength:** Pinches the center of the star inward.
+
+```glsl
+// 4. THE ORIGAMI STAR (HEXAGONAL FOLDING)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    
+    // Breathing scale
+    q *= 1.0 + sin(t) * 0.2;
+    
+    // Hexagonal folding logic
+    q.xy = abs(q.xy);
+    if(q.y > q.x * 0.57735) q.xy = q.xy * rot(1.0472); // Fold by 60 degrees
+    
+    q.xz *= rot(u_freq); // Internal twisting
+    
+    // Create the points using intersecting planes
+    float plane1 = dot(q, normalize(vec3(1.0, 1.0, 1.0))) - u_amp;
+    float plane2 = dot(q, normalize(vec3(1.0, -1.0, 0.5))) - (u_amp * 0.8);
+    
+    float star = max(plane1, plane2);
+    
+    // Pinch the core
+    star = max(star, -(length(p) - u_warp));
+    
+    return star * 0.5;
+}
+
+```
+
+---
+
+### 5. Acoustic Bubble (Soundwave Distortion)
+
+**What is it?** Looks like a drop of liquid suspended in zero gravity while being blasted by high-frequency sound waves. It uses chaotic spherical harmonics.
+**Sliders:**
+
+* **Shape Speed:** Controls the vibration frequency (how fast the waves ripple).
+* **Amp:** The base size of the liquid drop.
+* **Freq:** The pitch/density of the acoustic waves on the surface.
+* **Warp Strength:** The physical height (displacement) of the waves.
+
+```glsl
+// 5. ACOUSTIC BUBBLE (SOUNDWAVE DISTORTION)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Base sphere
+    float base_drop = length(p) - (2.0 + u_amp);
+    
+    // Convert to spherical coordinates for surface mapping
+    float r = length(p);
+    float theta = acos(p.z / r);
+    float phi = atan(p.y, p.x);
+    
+    // Complex trigonometric noise acting as soundwaves
+    float wave1 = sin(u_freq * theta + t * 5.0) * cos(u_freq * phi - t * 3.0);
+    float wave2 = sin(u_freq * 2.0 * phi + t * 2.0) * cos(u_freq * 1.5 * theta);
+    
+    // Combine waves and apply displacement
+    float displacement = (wave1 * wave2) * u_warp;
+    
+    return (base_drop - displacement) * 0.4;
+}
+
+```
+
+---
+
+### 6. The Glitch Pillar (Z-Axis Domain Shredding)
+
+**What is it?** A solid column that has been subjected to extreme digital corruption. The Z-axis is shredded into slices, and each slice is shifted laterally using a step function and a pseudo-random multiplier.
+**Sliders:**
+
+* **Shape Speed:** How fast the glitches stutter and shift.
+* **Amp:** The thickness of the main pillar.
+* **Freq:** The vertical density of the glitch slices (how thin they are).
+* **Warp Strength:** How violently the slices are pushed off-center.
+
+```glsl
+// 6. THE GLITCH PILLAR (Z-AXIS DOMAIN SHREDDING)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    
+    // Calculate discrete horizontal slices
+    float slice_id = floor(q.z * u_freq);
+    
+    // Pseudo-random offset based on the slice ID and time
+    float rand_offset_x = fract(sin(slice_id * 12.9898 + t) * 43758.5453) * 2.0 - 1.0;
+    float rand_offset_y = fract(sin(slice_id * 78.233 + t) * 43758.5453) * 2.0 - 1.0;
+    
+    // Apply the glitch shift
+    q.x += rand_offset_x * u_warp;
+    q.y += rand_offset_y * u_warp;
+    
+    // Base shape is a tall cylinder
+    float pillar = max(length(q.xy) - u_amp, abs(p.z) - 5.0);
+    
+    return pillar * 0.3; // Very low step multiplier required for broken domains
+}
+
+```
+
+---
+
+### 7. Molten Torus Knot (Math Art)
+
+**What is it?** A mathematically precise Trefoil Knot, but made out of thick, melting lava. It uses a 3D parametric curve thickened into a volume, combined with domain warping for the molten effect.
+**Sliders:**
+
+* **Shape Speed:** Rotates the knot and speeds up the melting drips.
+* **Amp:** Thickness of the knot's tube.
+* **Freq:** Density of the melting drips.
+* **Warp Strength:** Gravity/pull force of the melting effect.
+
+```glsl
+// 7. MOLTEN TORUS KNOT
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // Convert to polar coordinates on the XY plane
+    float r = length(p.xy);
+    float a = atan(p.y, p.x);
+    
+    // Trefoil Knot parametric estimation
+    // This creates the three loops
+    vec2 knot_center = vec2(2.0 + cos(3.0 * a), sin(3.0 * a) * 1.5);
+    vec2 current_pos = vec2(r, p.z);
+    
+    // Distance from the knot curve
+    float d = length(current_pos - knot_center) - u_amp;
+    
+    // Add the molten/dripping effect (pulling down on the Y axis)
+    float drips = sin(p.x * u_freq + t) * sin(p.z * u_freq - t);
+    
+    // Apply gravity (warp) only to the downward drips
+    d -= max(drips, 0.0) * u_warp * smoothstep(0.0, -2.0, p.y);
+    
+    return d * 0.4;
+}
+
+```
+
+---
+
+### 8. The Subnet (Voronoi Webbing)
+
+**What is it?** Looks like a microscopic neural network or a spider web in 3D. It uses intersecting sine waves to create a wireframe cage, then bloats the intersections.
+**Sliders:**
+
+* **Shape Speed:** Undulates the entire webbing.
+* **Amp:** Modifies the spacing of the web cells.
+* **Freq:** The thickness of the interconnecting wires.
+* **Warp Strength:** Bloats the nodes where the wires intersect.
+
+```glsl
+// 8. THE SUBNET (VORONOI WEBBING)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p * (1.0 + u_amp * 0.5);
+    q += vec3(sin(t), cos(t*0.8), sin(t*1.2));
+    
+    // Create the wireframe using inverted sines
+    float wire_x = length(vec2(sin(q.y), sin(q.z))) - u_freq;
+    float wire_y = length(vec2(sin(q.x), sin(q.z))) - u_freq;
+    float wire_z = length(vec2(sin(q.x), sin(q.y))) - u_freq;
+    
+    // Combine wires using smooth minimum to blend the intersections
+    float web = smin(wire_x, smin(wire_y, wire_z, 0.5), 0.5);
+    
+    // Bloat the intersection nodes
+    float nodes = length(vec3(sin(q.x), sin(q.y), sin(q.z))) - u_warp;
+    web = smin(web, nodes, 0.3);
+    
+    // Clip to a spherical boundary
+    return max(web, length(p) - 4.0) * 0.4;
+}
+
+```
+
+---
+
+### 9. Fractal Gearbox (Mechanical Iteration)
+
+**What is it?** A highly mechanical fractal that looks like interlocking gears and cogs. It uses a combination of angular repetition (`atan`) and box folding.
+**Sliders:**
+
+* **Shape Speed:** Drives the rotation of the gears.
+* **Amp:** Scales the central hub radius.
+* **Freq:** Determines the number of teeth on the gears.
+* **Warp Strength:** Extrudes the gear teeth outward.
+
+```glsl
+// 9. FRACTAL GEARBOX (MECHANICAL ITERATION)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    float d = 1000.0;
+    float scale = 1.0;
+    
+    for(int i=0; i<3; i++) {
+        // Angular repetition (creating teeth)
+        float a = atan(q.y, q.x);
+        float r = length(q.xy);
+        
+        // Define the number of teeth
+        float teeth = u_freq * 2.0;
+        float sector = 6.28318 / teeth;
+        
+        // Snap angle to the nearest sector and rotate
+        a = mod(a + sector*0.5, sector) - sector*0.5;
+        q.x = r * cos(a + t * (i%2==0 ? 1.0 : -1.0)); // Alternating gear rotation
+        q.y = r * sin(a + t * (i%2==0 ? 1.0 : -1.0));
+        
+        // Build the mechanical shape
+        float gear = max(sdBox(q, vec3(u_amp, u_warp, 0.5)), -sdCylinder(q, vec3(0.0, 0.0, u_amp*0.5)));
+        
+        d = min(d, gear / scale);
+        
+        // Fractal stepping (shrink and move outward)
+        q = abs(q) - vec3(1.5, 1.5, 0.0);
+        q *= 1.5;
+        scale *= 1.5;
+    }
+    
+    return max(d, length(p) - 4.0) * 0.5;
+}
+
+```
+
+---
+
+### 10. The Monolith (Surface Displacement)
+
+**What is it?** A towering, brutalist rectangular monolith. Its surface is carved with a highly complex, circuit-board-like displacement map generated entirely via math (no textures).
+**Sliders:**
+
+* **Shape Speed:** Slowly morphs the circuit patterns.
+* **Amp:** The height/width of the monolith block.
+* **Freq:** The scale of the circuit-board carving patterns.
+* **Warp Strength:** The depth of the carving. High values cut deep into the stone.
+
+```glsl
+// 10. THE MONOLITH (SURFACE DISPLACEMENT)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    // The Base Monolith structure
+    float box = sdBox(p, vec3(u_amp * 0.5, u_amp * 1.5, u_amp * 0.3));
+    
+    // Generate the surface carving pattern
+    vec3 q = p * u_freq;
+    
+    // Layered trigonometric noise to simulate circuit traces or alien runes
+    float pattern = abs(sin(q.x + t) * cos(q.y - t) + sin(q.z * 2.0));
+    pattern += abs(cos(q.x * 2.0) * sin(q.y * 3.0) + cos(q.z + t));
+    
+    // Sharp cutoff to make the carvings look like engraved lines
+    pattern = smoothstep(0.5, 0.6, pattern);
+    
+    // Subtract the pattern from the base box
+    // We only apply displacement if we are very close to the surface to save math
+    if(box < 0.5) {
+        box -= pattern * u_warp * 0.2;
+    }
+    
+    return box * 0.5;
+}
+
+```
