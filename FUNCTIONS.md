@@ -210,3 +210,164 @@ float map(vec3 p) {
 }
 
 ```
+
+**5. MANDELBULB (SPHERICAL FRACTAL)**
+
+**Method:** Implements a 3D analog of the Mandelbrot set using spherical coordinate power iteration. Modifies polar coordinates (`theta`, `phi`) continuously.
+
+**Parameters:**
+
+* **Shape Speed:** Controls temporal input (`t`) for internal polar rotations.
+* **Amp (Amplitude):** Determines the translation offset added during each iteration step.
+* **Freq (Frequency):** Specifies the exponent power of the fractal (dynamically maps from 3.0 to 8.0).
+* **Warp Strength:** Controls the phase shift applied to the polar angles `theta` and `phi`.
+
+```glsl
+// MANDELBULB (SPHERICAL FRACTAL)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    vec3 z = p;
+    float dr = 1.0;
+    float r = 0.0;
+    float power = 3.0 + u_freq * 5.0; 
+    float t = u_time * u_shapeSpd;
+
+    for (int i = 0; i < 5; i++) {
+        r = length(z);
+        if (r > 2.0) break;
+        
+        float theta = acos(z.z / r);
+        float phi = atan(z.y, z.x);
+        dr = pow(r, power - 1.0) * power * dr + 1.0;
+        
+        float zr = pow(r, power);
+        theta = theta * power + u_warp * sin(t);
+        phi = phi * power + u_warp * cos(t);
+        
+        z = zr * vec3(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        z += p * u_amp; 
+    }
+    return 0.5 * log(r) * r / dr;
+}
+
+```
+
+---
+
+**6. GYROID TISSUE (TPMS INFINITY)**
+
+**Method:** Approximates a Triply Periodic Minimal Surface (TPMS) using trigonometric dot products. Combines a low-frequency structural gyroid with a high-frequency detail layer.
+
+**Parameters:**
+
+* **Shape Speed:** Controls Z-axis forward velocity and internal planar rotation.
+* **Amp (Amplitude):** Determines the thickness scalar of the minimal surface wall.
+* **Freq (Frequency):** Multiplies the spatial scale, increasing coordinate density.
+* **Warp Strength:** Controls the amplitude of the secondary high-frequency detail layer.
+
+```glsl
+// GYROID TISSUE (TPMS INFINITY)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    p.z -= t * 2.0; 
+    
+    float scale = u_freq * 3.0; 
+    vec3 q = p * scale;
+    
+    q.xy *= rot(t * 0.2); 
+    
+    float gyroid = dot(sin(q), cos(q.zxy));
+    float detail = dot(sin(q * 3.0), cos(q.zxy * 3.0)) * u_warp * 0.5;
+    
+    float d = (abs(gyroid + detail) - u_amp) / scale;
+    
+    float bounds = length(p.xy) - 4.0; 
+    return max(d, bounds) * 0.6;
+}
+
+```
+
+---
+
+**7. MENGER FOLD (SIERPINSKI VARIANT)**
+
+**Method:** Implements geometric folding using `abs()` and conditional plane swapping. Multiplies scalar distance iteratively to create sharp, self-similar fractal voids.
+
+**Parameters:**
+
+* **Shape Speed:** Modifies the temporal input (`t`) applied to iteration-level XY rotations.
+* **Amp (Amplitude):** Determines the linear translation offset applied after scaling.
+* **Freq (Frequency):** Specifies the volumetric scaling multiplier applied per iteration.
+* **Warp Strength:** Controls the angular magnitude of the internal rotation matrix.
+
+```glsl
+// MENGER FOLD (SIERPINSKI VARIANT)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    float scale = 1.0;
+    
+    for(int i = 0; i < 5; i++) {
+        q = abs(q);
+        
+        if(q.x < q.y) q.xy = q.yx;
+        if(q.x < q.z) q.xz = q.zx;
+        if(q.y < q.z) q.yz = q.zy;
+        
+        float s = 2.0 + u_freq;
+        q = q * s - vec3(u_amp * 2.0);
+        scale *= s;
+        
+        q.xy *= rot(u_warp * sin(t));
+    }
+    
+    float d = sdBox(q, vec3(1.0)) / scale;
+    return d * 0.6;
+}
+
+```
+
+---
+
+**8. APOLLONIAN SINGULARITY (SPHERICAL INVERSION)**
+
+**Method:** Utilizes spherical inversion (`q * k` where `k` is inversely proportional to radius squared). Combines modular repetition with inversion to generate recursive, hollow spherical clusters.
+
+**Parameters:**
+
+* **Shape Speed:** Controls the temporal input (`t`) applied to internal XYZ translations.
+* **Amp (Amplitude):** Defines the scalar magnitude of the post-inversion translation offset.
+* **Freq (Frequency):** Modifies the inversion radius scalar limit.
+* **Warp Strength:** Controls the internal Z-axis rotational matrix applied at each iteration.
+
+```glsl
+// APOLLONIAN SINGULARITY (SPHERICAL INVERSION)
+float map(vec3 p) {
+    p.xy *= rot(u_rotZ); p.xz *= rot(u_rotY); p.yz *= rot(u_rotX);
+    float t = u_time * u_shapeSpd;
+    
+    vec3 q = p;
+    float scale = 1.0;
+    
+    for(int i = 0; i < 6; i++) {
+        q = mod(q - 1.0, 2.0) - 1.0; 
+        
+        float r2 = dot(q, q);
+        float k = max(u_freq / r2, 0.1); 
+        
+        q *= k;
+        scale *= k;
+        
+        q += vec3(u_amp, u_amp * sin(t), u_amp * cos(t));
+        q.xy *= rot(u_warp);
+    }
+    
+    float d = (length(q.xy) - 0.1) / scale;
+    return max(d, length(p) - 3.5) * 0.4;
+}
+
+```
